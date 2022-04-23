@@ -1,6 +1,92 @@
-Assignment 1:
-==============
+# Assignment 1:
+================
 
+I performed this assignment (and the next one too) on my own without any other team member.
+
+### Steps carried out for setup configuration:
+
+For this particular series of assignments I chose my laptop itself (instead of using GCP or any other workstation) which runs Linux-Ubuntu OS and also has support for Nested Hardware Virtualization (found out by checking for 'vmx flags' in the output of command: 'cat /proc/cpuinfo')
+
+However, to be more safe, I installed VMWare Workstation Pro and created an Ubuntu based VM inside it. Following were some features of the VM created,
+- 30 day free license
+- settings - ENABLE -> 'Virtualize Intel VT-x/EPT or AMD-V/RVI' (to enable support for Nested Virtualization)
+- cat /proc/cpuinfo inside the VM confirms that VMX Flags are available in the VM
+- Specs: 100GB, 8GB Memory, 4 vCPUs
+- VM Created using Ubuntu 20.04 ISO Image
+
+
+- Necessary dependencies like git, vim, make, gcc etc. were installed
+
+
+- Forked the official Linux git repository into my github account; and then cloned the new repo into this VM
+
+- Downloaded cmpe283-1.c and Makefile into this VM
+
+- Include code changes for MODULE_LINCESE("GPL v2")
+
+Run the following commands as mentioned below:
+1. 'make' command in the location where cmpe283-1.c and Makefile are present i.e. outside the linux/ directory
+
+2. Install all necessary dependencies with the command:
+	> sudo apt install gcc bison flex libssl-dev
+	> sudo apt-get install build-essential
+	> sudo apt install elfutils libelf-dev
+
+	'make clean' to clean what was made in the earlier step without some necessary dependecies. Hit the 'make' command again
+
+3. cd linux/
+
+4. 'make oldconfig' in the linux/ directory. Use all the default options by keeping the Enter key pressed (as suggested by Professor)
+
+5. 'make prepare'
+
+6. 'make -j 4 modules'
+
+7. 'sudo make -j 4'
+	- at this point I got the error: 'No rule to make target 'debian/canonical-certs.pem' needed by 'certs/x509_certificate_list'. Stop.
+
+	- SOLUTION: Hit folllowing two commands
+		- scripts/config --set-str SYSTEM_TRUSTED_KEYS ""
+		- scripts/config --disable SYSTEM_REVOCATION_KEYS 
+		- This is because the make config tries to sign the kernel modules with a Canonical Private key.
+
+	- Hit the make command again after above fix
+
+8. sudo make INSTALL_MOD_STRIP=1 modules_install
+	- install all the modules, with the debugging info OFF as suggested.
+
+9. make
+	- This command took around 2 hrs 10 minutes!
+	- At the end got an error like: 
+		BTF: .tmp_vmlinux.btf: pahole (pahole) is not available
+		Failed to generate BTF for vmlinux
+		...
+		...
+
+	- But it was resolved using the command: sudo apt install dwarves
+
+
+10. make install
+	- ERROR: Missing file: arch/x86/boot/bzImage. /bib/sh: 1: zstd not found
+	- SOLUTION: 
+		- sudo apt-get install -y zstd
+		- make bzImage
+
+	- Run command again
+
+
+11. sudo reboot
+
+12. uname -a
+	- Ubuntu 5.18.0-rc3+ kernel is now installed!!!!!!
+
+13. cd ../
+
+14. make 
+
+15. sudo insmod cmpe283-1.ko
+
+Make the necessary code changes in the cmpe283-1.c file to print the various MRS Control capabilities to the system message log and repeat the make process and insmod again.
 
 
 # MSR Capabilities, code output:
@@ -113,10 +199,16 @@ Since, Nested Virtualization was enabled in the setup configuration during Assig
 		> sudo systemctl is-active libvirtd
 
 	3. Make sure you have downloaded the Ubuntu ISO Image file
+	
+	4. > sudo rmmod kvm_intel
+           > sudo rmmod kvm
+           > lsmod | grep kvm
+           > sudo modprobe kvm
+           > sudo modprobe kvm_intel
 
-	4. Create an Ubuntu-VM by starting the QEMU Virt-Manager and following some basic UI prompts
+	5. Create an Ubuntu-VM by starting the QEMU Virt-Manager and following some basic UI prompts
 
-	5. Install CPUID package into this VM using the following command:
+	6. Install CPUID package into this VM using the following command:
 		> sudo apt-get install -y cpuid
 
 We now have the setup ready for testing our kernel code changes.
