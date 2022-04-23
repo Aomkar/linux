@@ -96,3 +96,61 @@ Assignment 1:
 [ 6568.656076]   Load PKRS: Can set=No, Can clear=Yes
 [ 6582.511090] CMPE 283 Assignment 1 Module Exits
 ```
+
+
+# Assignment 2
+
+
+Since, Nested Virtualization was enabled in the setup configuration during Assignment 1, I was able to create another VM inside my VMWare Workstation's VM using the following steps:
+
+	1. Install Qemu KVM and virt-manager (and the necessary dependencies) using the following commands:
+		> sudo apt-get update -y
+		> sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager
+
+	2. Check if the virt-manager is working using the either of the following commands:
+		> systemctl status libvirtd
+		OR
+		> sudo systemctl is-active libvirtd
+
+	3. Make sure you have downloaded the Ubuntu ISO Image file
+
+	4. Create an Ubuntu-VM by starting the QEMU Virt-Manager and following some basic UI prompts
+
+	5. Install CPUID package into this VM using the following command:
+		> sudo apt-get install -y cpuid
+
+We now have the setup ready for testing our kernel code changes.
+
+
+### <u>Code Changes</u>
+
+For the Assignment 2, as we were allowed to choose among the four CPUID leaf nodes, I have selected the nodes 0x4FFFFFFF and 0x4FFFFFFE.
+
+I have made the necessary changes in the files: /linux/arch/x86/kvm/cpuid.c and /linux/arch/x86/kvm/vmx/vmx.c using global variable approach.
+
+For the changes in kernel code to take effect, we should follow the below steps:
+
+	1. sudo make -j 4 modules
+	
+	2. sudo make INSTALL_MOD_STRIP=1 modules_install
+	
+	3. sudo make install 
+	
+	4. sudo reboot 
+
+	(Step 3 could be optional)
+
+
+### <u>Testing the code</u>
+------------------
+
+Start the Ubuntu-VM that was created earlier in Qemu Virt-manager.
+
+Open a terminal and make following calls to the CPUID passing the leaf node values as paramters to it using the -l flag.
+> cpuid -l 0x4FFFFFFF
+> cpuid -l 0x4FFFFFFE
+
+Check the output values in EAX, EBX and ECX Registers in the terminal for the second command.
+
+Check the System Message log using the 'dmesg' command in a terminal in the parent VM (which is running on VMWare Workstation in my case). This log will contain the stats regarding the exits, i.e. 'Total number of exits' and 'Total time For all exits', which are the logs from the cpuid.c file.
+
