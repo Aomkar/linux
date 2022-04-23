@@ -1,7 +1,6 @@
 # Assignment 1:
-================
 
-I performed this assignment (and the next one too) on my own without any other team member.
+I performed this assignment without any other team member.
 
 ### Steps carried out for setup configuration:
 
@@ -89,7 +88,7 @@ Run the following commands as mentioned below:
 Make the necessary code changes in the cmpe283-1.c file to print the various MRS Control capabilities to the system message log and repeat the make process and insmod again.
 
 
-# MSR Capabilities, code output:
+### MSR Capabilities, code output:
 ```
 [ 6568.652794] CMPE 283 Assignment 1 Module Start
 [ 6568.652868] Pinbased Controls MSR: 0x3f00000016
@@ -186,6 +185,9 @@ Make the necessary code changes in the cmpe283-1.c file to print the various MRS
 
 # Assignment 2
 
+I performed this assignment without any other team member.
+
+### Setup steps
 
 Since, Nested Virtualization was enabled in the setup configuration during Assignment 1, I was able to create another VM inside my VMWare Workstation's VM using the following steps:
 
