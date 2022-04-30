@@ -38,6 +38,12 @@ EXPORT_SYMBOL(total_exits_across_all_vms);
 u64 total_time_for_all_exits = 0;
 EXPORT_SYMBOL(total_time_for_all_exits);
 
+u32 exit_reason_wise_count[69];
+EXPORT_SYMBOL(exit_reason_wise_count);
+
+u64 exit_reason_wise_total_time[69];
+EXPORT_SYMBOL(exit_reason_wise_total_time);
+
 u32 xstate_required_size(u64 xstate_bv, bool compacted)
 {
 	int feature_bit = 0;
@@ -1469,6 +1475,55 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 		ecx = (total_time_for_all_exits & 0x4fffffff);
 		
 		printk(KERN_INFO "Total time For all exits = %llu", total_time_for_all_exits);
+	} else if (eax == 0x4ffffffd) {
+
+		// printk(KERN_INFO "EAX = 0x4ffffffd | Value in ECX is %d", (int)ecx);
+		if (ecx >= 0 && ecx <= 69) {
+			if (ecx == 35 || ecx == 38 || ecx == 42 || ecx == 65) {
+				printk(KERN_INFO "Exit Number %d present in ecx is undefined", (int)ecx);
+				eax = 0;
+				ebx = 0;
+				ecx = 0;
+				edx = 0xffffffff;
+			} else {
+				eax = exit_reason_wise_count[(int)ecx];
+				printk(KERN_INFO "Exit Number %d occurred %d number of times", (int)ecx, exit_reason_wise_count[(int)ecx]);
+			}
+		} else {
+			printk(KERN_INFO "Exit Number %d in ecx is not in range 0 - 69", (int)ecx);
+			eax = 0;
+			ebx = 0;
+			ecx = 0;
+			edx = 0;
+		}
+	} else if (eax == 0x4ffffffc) {
+
+		// printk(KERN_INFO "EAX = 0x4ffffffc | Value in ECX is %d", (int)ecx);
+		if (ecx >= 0 && ecx <= 69) {
+
+			if (ecx == 35 || ecx == 38 || ecx == 42 || ecx == 65) {
+				printk(KERN_INFO "Exit Number %d present in ecx is undefined", (int)ecx);
+				eax = 0;
+				ebx = 0;
+				ecx = 0;
+				edx = 0xffffffff;
+			} else {
+				// high 32 bits
+				ebx = ((exit_reason_wise_total_time[(int)ecx]) >> 32);
+				// low 32 bits
+				ecx = (exit_reason_wise_total_time[(int)ecx] & 0xffffffff);
+				printk(KERN_INFO "Exit Number %d had a total time of %llu cycles", (int)ecx, exit_reason_wise_total_time[(int)ecx]);
+			}
+
+		} else {
+			printk(KERN_INFO "Exit Number %d in ecx is not in range 0 - 69", (int)ecx);
+			eax = 0;
+			ebx = 0;
+			ecx = 0;
+			edx = 0;
+		}
+
+
 	} else {
 		kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
 	}

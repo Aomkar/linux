@@ -248,3 +248,132 @@ Check the output values in EAX, EBX and ECX Registers in the terminal for the se
 
 Check the System Message log using the 'dmesg' command in a terminal in the parent VM (which is running on VMWare Workstation in my case). This log will contain the stats regarding the exits, i.e. 'Total number of exits' and 'Total time For all exits', which are the logs from the cpuid.c file.
 
+
+#Assignment 3
+-------------
+
+Question 1: I did this assignment by myself
+
+Setup steps:
+-------------
+- sudo rmmod kvm-intel
+- sudo rmmod kvm
+
+- Issue:
+	- make -j 4 modules 
+	- sudo make INSTALL_MOD_STRIP=1 modules_install && make install 
+	- modprobe kvm
+	- modprobe kvm-intel
+
+	These commands did not work for me for some reason. I even tried running them after cleaning the make builds (i.e. 'make clean'); even then my code changes weren't refecting in the kernel.
+
+	Solution: Explicitly 'make' the 'kvm' modules only (since code changes were made into kvm's cpuid.c and kvm/vmx's vmx.c only); using the following commands:
+		- make M=arch/x86/kvm modules
+		- insmod arch/x86/kvm/kvm.ko
+		- insmod arch/x86/kvm/kvm-intel.ko
+
+- Before making code changes we need to identify which exit types are not supported, by referring to SDM Manual (Page number 4281 - Volume 3-d Table C-1)
+
+- Once the modules are loaded, start the inner vm and trigger the respective exits using the cpuid commands as below:
+	- cpuid -l 0x4ffffffd -s <EXIT_NUMBER>
+	- cpuid -l 0x4ffffffc -s <EXIT_NUMBER>
+
+- To test the command in a loop for all integers in range [0-69], we can run a shell command as follows:
+	- for i in `seq 0 69`; do cpuid -l 0x4ffffffd -s $i; done
+
+
+- Check the system message logs using the below command:
+	- dmesg
+
+
+
+On a Full VM Boot, total number of exits observed was 1299672 which had a total processing time of 46950089552 cycles. Following were the most frequently occurring exit types
+
+EPT violation EXIT (48) - 685299 
+I/O instruction (30) - 145063, CPUID (10) - 140738
+WRMSR (32) - 91609
+
+
+Following was the distribution of the rest of the non-zero exit count occurences
+
+0 - 8798
+1 - 47966
+7 - 9586
+10 - 140738
+12 - 30006
+28 - 19537
+30 - 145063
+32 - 91609
+40 - 3184
+48 - 685299
+49 - 27976
+
+Looking at this distribution we can't exactly say that the exit counts increases in a constant or a linear fashion; but it does increase overall.
+
+
+#Assignment 4
+--------------------
+
+Question 1: I did this assignment by myself
+
+
+Steps:
+-------
+- Once the VM starts, get the total count using the 0x4fffffff cpuid exit
+- Execute the 0x4ffffffd exit for range 0-69, using the command used in assignment 3. This will be the output for ept not being zero
+- Shutdown the inner vm
+- Remove the kvm-intel module: sudo rmmod kvm-intel
+- Insert the module again using sudo insmod /lib/modules/5.18.0-rc3+/kernel/arch/x86/kvm/kvm-intel.ko ept=0 command. Record the outputs using the same procedure.
+
+Nested Paging - With EPT
+--------------------------
+
+Total Number of exits = 1195689
+
+Distribution of other non-zero count exit occurrences:
+0 - 8801
+1 - 46288
+7 - 10103
+10 - 140841
+12 - 21574
+28 - 19567
+29 - 2
+30 - 155787
+31 - 571
+32 - 78604
+40 - 3016
+48 - 693838
+49 - 27093
+54 - 3
+
+Shadow paging - Without EPT (ept = 0)
+------------------------------------------
+
+Total Number of exits = 3808755
+
+Distribution of other non-zero count exit occurrences:
+0 - 8811
+1 - 52669
+7 - 11979
+10 - 143671
+12 - 32307
+28 - 19567
+29 - 2
+30 - 156932
+31 - 868
+32 - 110199
+40 - 3586
+48 - 706080
+49 - 30724
+54 - 4
+55 - 3
+
+- Screenshots are added in the cmpe283 folder.
+
+- Learning from the count of exits was that the shadow paging mode incurs more number of exits. The count was pretty much expected to increase as compared to the Nested Paging mode.
+- Total number of exits is almost 3 times in shadow paging. This is expected to happen as the three exit types namely: CR3, Page Fault, and TLB Flush; are enabled in this mode.
+- The exit number 48 has the highest count in both the modes
+- If we observe, it seems that some exits have a similar count in both the modes for eg. exit numbers 30 and 10; however for others, there is a considerable increase in the shadow paging mode
+
+
+

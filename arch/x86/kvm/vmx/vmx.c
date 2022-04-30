@@ -69,6 +69,8 @@
 
 extern u32 total_exits_across_all_vms;
 extern u64 total_time_for_all_exits; 
+extern u32 exit_reason_wise_count[69];
+extern u64 exit_reason_wise_total_time[69];
 
 MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
@@ -6021,6 +6023,10 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	total_exits_across_all_vms += 1;
 	// printk(KERN_INFO "Total exits till now  = %llu", total_exits_across_all_vms);
 
+	if (exit_reason.basic <= 69) {
+		exit_reason_wise_count[exit_reason.basic]++;
+	}
+
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more
 	 * updated. Another good is, in kvm_vm_ioctl_get_dirty_log, before
@@ -6182,6 +6188,7 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	exit_total_time = rdtsc() - exit_start_time;
 	// printk(KERN_INFO "Current exit time = %llu", exit_total_time);
 	total_time_for_all_exits = total_time_for_all_exits + exit_total_time;
+	exit_reason_wise_total_time[(int)exit_handler_index] = (exit_total_time + exit_reason_wise_total_time[(int)exit_handler_index]);
 	// printk(KERN_INFO "Total exit time for all exits till now = %llu", total_time_for_all_exits);
 	// commented above logs, since the system message log gets flooded with these
 
